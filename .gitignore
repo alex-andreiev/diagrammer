@@ -1,0 +1,29 @@
+# Bundler / gem build artifacts
+/.bundle/
+/pkg/
+*.gem
+
+# This is a library: deps are resolved fresh from the gemspec, so the lock
+# file is not committed (see Bundler's gem conventions).
+/Gemfile.lock
+
+# Test / coverage output
+/coverage/
+/spec/reports/
+
+# RDoc / YARD
+/.yardoc
+/_yardoc/
+/doc/
+
+# Temp files
+/tmp/
+
+# Editor / tooling caches
+/.ruby-lsp/
+
+# Local Claude Code settings (keep shared .claude/settings.json trackable)
+/.claude/settings.local.json
+
+# Internal brainstorming/design specs (not part of published docs)
+/docs/superpowers/

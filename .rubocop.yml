@@ -1,0 +1,26 @@
+AllCops:
+  NewCops: enable
+  TargetRubyVersion: 3.1
+  SuggestExtensions: false
+  Exclude:
+    - "vendor/**/*"
+    - "tmp/**/*"
+
+Gemspec/DevelopmentDependencies:
+  Enabled: false
+
+Layout/LineLength:
+  Max: 120
+  Exclude:
+    - "lib/diagrammer/html_renderer.rb"
+
+Metrics/MethodLength:
+  Exclude:
+    - "spec/**/*"
+
+Metrics/BlockLength:
+  Exclude:
+    - "spec/**/*"
+
+Style/Documentation:
+  Enabled: false
