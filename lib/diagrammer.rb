@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'diagrammer/version'
+require_relative 'diagrammer/relationship_mapper'
 require_relative 'diagrammer/model_introspector'
 require_relative 'diagrammer/html_renderer'
 require_relative 'diagrammer/generator'

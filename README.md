@@ -2,7 +2,7 @@
 
 Diagrammer is a Rails gem that generates a standalone, interactive database relationship diagram from ActiveRecord models.
 
-![Diagrammer example output](docs/screenshot.png)
+![Diagrammer example output](https://raw.githubusercontent.com/alex-andreiev/diagrammer/main/docs/screenshot.png)
 
 It introspects your Rails application, reads model columns and associations, and writes a single browser-friendly HTML file. The diagram renders as draggable table cards — similar in spirit to dbdiagram.io — directly in the browser. The main design goal is a zero-dependency workflow: no Graphviz, no system packages, no local diagram renderer, no PDF toolchain, and no network access required to view the result.
 

@@ -242,7 +242,9 @@ module Diagrammer
             }
 
             // ---- Build cards -------------------------------------------------
-            var nodes = {};        // table_name -> node
+            var nodes = Object.create(null);   // table_name -> node (null proto: table
+                                               // names like "constructor" must not
+                                               // collide with Object.prototype)
             var order = [];        // stable iteration order
             tables.forEach(function (t) {
               var el = document.createElement("div");
@@ -253,7 +255,7 @@ module Diagrammer
               header.textContent = t.table_name;
               el.appendChild(header);
 
-              var rows = {};       // column name -> row element
+              var rows = Object.create(null);  // column name -> row element
               (t.columns || []).forEach(function (c) {
                 var row = document.createElement("div");
                 row.className = "col" + (c.primary_key ? " is-pk" : "") + (c.foreign_key ? " is-fk" : "");
@@ -300,7 +302,9 @@ module Diagrammer
             relationships.forEach(function (r) {
               var from = nodes[r.from], to = nodes[r.to];
               if (!from || !to) { return; }
-              var fkName = (r.name || "") + "_id";
+              // The real FK column beats guessing "<assoc>_id", which misses
+              // whenever the association was declared with a custom :foreign_key.
+              var fkName = r.foreign_key || ((r.name || "") + "_id");
               var fkRow = from.rows[fkName] ? fkName : null;
               var pkCol = pkColumn(to);
               var link = { from: from, to: to, fkRow: fkRow, pkRow: pkCol, card: cardinality(r.macro), group: null };
@@ -317,13 +321,13 @@ module Diagrammer
             }
 
             // Map an association macro to crow's-foot cardinality at each end.
+            // Edges always run FK holder -> referenced table, so "from" is the
+            // child side for every macro except habtm.
             function cardinality(macro) {
               switch (macro) {
-                case "belongs_to": return { from: "many", to: "one" };
                 case "has_one": return { from: "one", to: "one" };
-                case "has_many": return { from: "one", to: "many" };
                 case "has_and_belongs_to_many": return { from: "many", to: "many" };
-                default: return { from: "one", to: "many" };
+                default: return { from: "many", to: "one" };
               }
             }
 
@@ -358,7 +362,7 @@ module Diagrammer
             }
 
             function connectedComponents() {
-              var seen = {}, comps = [];
+              var seen = Object.create(null), comps = [];
               order.forEach(function (start) {
                 if (seen[start.name]) { return; }
                 var queue = [start], comp = [];
@@ -675,7 +679,7 @@ module Diagrammer
             viewport.addEventListener("pointercancel", endPointer);
 
             function highlight(node, on) {
-              var related = {};
+              var related = Object.create(null);
               related[node.name] = true;
               node.edges.forEach(function (l) {
                 related[l.from.name] = true; related[l.to.name] = true;

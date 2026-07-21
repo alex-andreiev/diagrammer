@@ -1,11 +1,7 @@
 # frozen_string_literal: true
 
-require 'set'
-
 module Diagrammer
   class ModelIntrospector
-    ASSOCIATION_MACROS = %i[belongs_to has_one has_many has_and_belongs_to_many].freeze
-
     def initialize(models: nil)
       @models = models
     end
@@ -13,10 +9,10 @@ module Diagrammer
     def call
       eager_load_rails_application
 
-      models = selected_models.sort_by(&:name)
+      models = selected_models.sort_by { |model| model.name.to_s }
       {
         tables: unique_tables(models),
-        relationships: relationships_for(models)
+        relationships: RelationshipMapper.new(models: models).call
       }
     end
 
@@ -25,15 +21,30 @@ module Diagrammer
     # Several models can share one database table (STI subclasses, gem base
     # classes such as I18n's Translation, multi-schema rpush models). Emit a
     # single card per table; associations from every model still merge onto it
-    # via relationships_for, which is keyed by table name.
+    # via RelationshipMapper, which is keyed by table name.
     def unique_tables(models)
-      models.each_with_object({}) do |model, by_table|
-        by_table[model.table_name] ||= table_for(model)
-      end.values
+      models.group_by(&:table_name).map { |_table, group| table_for(preferred_model(group)) }
     end
 
+    # Models are sorted by name, so an STI subclass can win the card label over
+    # its own base class ("AdminUser" < "User"). Prefer the root of the
+    # hierarchy, and never let an anonymous class name a table it shares.
+    def preferred_model(group)
+      named = group.reject { |model| model.name.to_s.empty? }
+      candidates = named.empty? ? group : named
+      candidates.find { |model| sti_base?(model) } || candidates.first
+    end
+
+    def sti_base?(model)
+      model.respond_to?(:base_class) && model.base_class == model
+    rescue StandardError
+      false
+    end
+
+    # Rails.respond_to?(:application) is true even before an application is
+    # defined (engines, gem test suites), where the reader returns nil.
     def eager_load_rails_application
-      return unless defined?(Rails) && Rails.respond_to?(:application)
+      return unless defined?(Rails) && Rails.respond_to?(:application) && Rails.application
 
       Rails.application.eager_load!
     end
@@ -77,37 +88,6 @@ module Diagrammer
           foreign_key: column.name.end_with?('_id')
         }
       end
-    end
-
-    def relationships_for(models)
-      table_names = models.to_set(&:table_name)
-      models.flat_map { |model| model_relationships(model, table_names) }.uniq
-    end
-
-    def model_relationships(model, table_names)
-      model.reflect_on_all_associations.filter_map do |association|
-        relationship_for(model, association, table_names)
-      end
-    end
-
-    def relationship_for(model, association, table_names)
-      return unless ASSOCIATION_MACROS.include?(association.macro)
-
-      target_table = association_table_name(association)
-      return unless target_table && table_names.include?(target_table)
-
-      {
-        from: model.table_name,
-        to: target_table,
-        name: association.name.to_s,
-        macro: association.macro
-      }
-    end
-
-    def association_table_name(association)
-      association.klass.table_name
-    rescue StandardError
-      nil
     end
   end
 end
